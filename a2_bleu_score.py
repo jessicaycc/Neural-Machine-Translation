@@ -128,7 +128,8 @@ def BLEU_score(reference, hypothesis, n):
     BP = brevity_penalty(reference, hypothesis)
     p_total = 1.00
     for i in range(n):
-        p = n_gram_precision(reference, candidate, i+1)
+        p = n_gram_precision(reference, hypothesis, i+1)
         p_total = p_total * p
     bleu = BP * p_total**(1/n)
+    print(bleu)
     return (bleu) 
