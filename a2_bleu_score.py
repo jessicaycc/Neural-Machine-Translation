@@ -26,18 +26,17 @@ def grouper(seq, n):
     ngrams : list
     '''
     ngrams = []
-    sentence = seq.split()
-    for i, word in enumerate(sentence):
-        token = ""
-        if (i+n-1)<len(sentence):
+    
+    for i in range(len(seq)):
+        word = []
+        if (i+n-1)<len(seq):
                 for j in range(n):
-                        if ((i+j) >= len(sentence)):
+                        if ((i+j) >= len(seq)):
                                 continue
-                        elif j < n-1:
-                                token += sentence[i+j] + " "
                         else:
-                                token += sentence[i+j]
-                ngrams.append(token)
+                                word.append(seq[i+j]) 
+                ngrams.append(word)
+
     return (ngrams)
 
 
