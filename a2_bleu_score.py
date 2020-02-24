@@ -25,7 +25,20 @@ def grouper(seq, n):
     -------
     ngrams : list
     '''
-    assert False, "Fill me"
+    ngrams = []
+    sentence = seq.split()
+    for i, word in enumerate(sentence):
+        token = ""
+        if (i+n-1)<len(sentence):
+                for j in range(n):
+                        if ((i+j) >= len(sentence)):
+                                continue
+                        elif j < n-1:
+                                token += sentence[i+j] + " "
+                        else:
+                                token += sentence[i+j]
+                ngrams.append(token)
+    return (ngrams)
 
 
 def n_gram_precision(reference, candidate, n):
