@@ -59,8 +59,20 @@ def n_gram_precision(reference, candidate, n):
         The n-gram precision. In the case that the candidate has length 0,
         `p_n` is 0.
     '''
-    assert False, "Fill me"
+    if not candidate:
+        p_n = 0
+        return(p_n)
 
+    reference_ngram = grouper(reference, n)
+    candidate_ngram = grouper(candidate, n)
+    N = len(candidate_ngram)
+    C = 0
+
+    for word in candidate_ngram:
+        if word in reference_ngram:
+            C += 1
+    p_n = C/N
+    return (p_n)
 
 def brevity_penalty(reference, candidate):
     '''Calculate the brevity penalty between a reference and candidate
@@ -79,8 +91,19 @@ def brevity_penalty(reference, candidate):
         The brevity penalty. In the case that the candidate transcription is
         of 0 length, `BP` is 0.
     '''
-    assert False, "Fill me"
+    if not candidate:
+       BP = 0
+       return(BP)
+    
+    c = len(candidate)
+    r = len(reference)
+    brevity = r/c
 
+    if brevity >= 1:
+        BP = exp(1-brevity)
+    else:
+        BP = 1
+    return(BP)
 
 def BLEU_score(reference, hypothesis, n):
     '''Calculate the BLEU score
@@ -102,4 +125,10 @@ def BLEU_score(reference, hypothesis, n):
     bleu : float
         The BLEU score
     '''
-    assert False, "Fill me"
+    BP = brevity_penalty(reference, hypothesis)
+    p_total = 1.00
+    for i in range(n):
+        p = n_gram_precision(reference, candidate, i+1)
+        p_total = p_total * p
+    bleu = BP * p_total**(1/n)
+    return (bleu) 
