@@ -20,13 +20,23 @@ class Encoder(EncoderBase):
         # cell_type will be one of: ['lstm', 'gru', 'rnn']
         # relevant pytorch modules:
         # torch.nn.{LSTM, GRU, RNN, Embedding}
-        assert False, "Fill me"
+        self.embedding = torch.nn.Embedding(self.source_vocab_size, self.word_embedding_size)
+
+        if self.cell_type == 'lstm':
+            self.rnn = torch.nn.LSTM()
+        elif self.cell_type == 'GRU':
+            self.rnn = torch.nn.GRU()
+        else:
+            self.rnn = torch.nn.RNN()
+
 
     def get_all_rnn_inputs(self, F):
         # compute input vectors for each source transcription.
         # F is shape (S, N)
         # x (output) is shape (S, N, I)
-        assert False, "Fill me"
+        x = self.embedding(F)
+        return (x)
+        
 
     def get_all_hidden_states(self, x, F_lens, h_pad):
         # compute all final hidden states for provided input sequence.
@@ -37,7 +47,7 @@ class Encoder(EncoderBase):
         # h (output) is of shape (S, N, 2 * H)
         # relevant pytorch modules:
         # torch.nn.utils.rnn.{pad_packed,pack_padded}_sequence
-        assert False, "Fill me"
+        x = pack_padded_sequence(x, lens)
 
 
 class DecoderWithoutAttention(DecoderBase):
