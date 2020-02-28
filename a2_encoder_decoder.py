@@ -21,13 +21,15 @@ class Encoder(EncoderBase):
         # relevant pytorch modules:
         # torch.nn.{LSTM, GRU, RNN, Embedding}
         self.embedding = torch.nn.Embedding(self.source_vocab_size, self.word_embedding_size)
-
         if self.cell_type == 'lstm':
-            self.rnn = torch.nn.LSTM()
+            self.rnn = torch.nn.LSTM(self.word_embedding_size, self.hidden_state_size, 
+                                     self.num_hidden_layers, dropout=self.dropout, bidirectional=True)
         elif self.cell_type == 'GRU':
-            self.rnn = torch.nn.GRU()
+            self.rnn = torch.nn.GRU(self.word_embedding_size, self.hidden_state_size, 
+                                    self.num_hidden_layers, dropout=self.dropout, bidirectional=True)
         else:
-            self.rnn = torch.nn.RNN()
+            self.rnn = torch.nn.RNN(self.word_embedding_size, self.hidden_state_size, 
+                                    self.num_hidden_layers, dropout=self.dropout, bidirectional=True)
 
 
     def get_all_rnn_inputs(self, F):
@@ -47,8 +49,10 @@ class Encoder(EncoderBase):
         # h (output) is of shape (S, N, 2 * H)
         # relevant pytorch modules:
         # torch.nn.utils.rnn.{pad_packed,pack_padded}_sequence
-        x = pack_padded_sequence(x, lens)
-
+        x = torch.nn.utils.rnn.pack_padded_sequence(x, F_lens)
+        output, hidden = self.rnn(x)
+        h, _ = torch.nn.utils.rnn.pad_packed_sequence(output, padding_value = h_pad)
+        return (h)
 
 class DecoderWithoutAttention(DecoderBase):
     '''A recurrent decoder without attention'''
