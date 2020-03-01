@@ -334,19 +334,19 @@ class DecoderBase(torch.nn.Module, metaclass=abc.ABCMeta):
 
     def forward(self, E_tm1, htilde_tm1, h, F_lens):
         self.check_input(E_tm1, htilde_tm1, h, F_lens)
-        xtilde_t = self.get_current_rnn_input(E_tm1, htilde_tm1, h, F_lens)
         if htilde_tm1 is None:
             htilde_tm1 = self.get_first_hidden_state(h, F_lens)
             if self.cell_type == 'lstm':
                 # initialize cell state with zeros
                 htilde_tm1 = (htilde_tm1, torch.zeros_like(htilde_tm1))
+        xtilde_t = self.get_current_rnn_input(E_tm1, htilde_tm1, h, F_lens)
         h_t = self.get_current_hidden_state(xtilde_t, htilde_tm1)
         if self.cell_type == 'lstm':
             logits_t = self.get_current_logits(h_t[0])
         else:
             logits_t = self.get_current_logits(h_t)
         return logits_t, h_t
-
+        
     @abc.abstractmethod
     def get_first_hidden_state(self, h, F_lens):
         '''Get the initial decoder hidden state, prior to the first input

@@ -64,7 +64,18 @@ class DecoderWithoutAttention(DecoderBase):
         # relevant pytorch modules:
         # cell_type will be one of: ['lstm', 'gru', 'rnn']
         # torch.nn.{Embedding,Linear,LSTMCell,RNNCell,GRUCell}
-        assert False, "Fill me"
+      
+        self.embedding = torch.nn.Embedding(self.target_vocab_size, self.word_embedding_size)
+     
+        if self.cell_type == 'lstm':
+            self.rnn = torch.nn.LSTMCell(self.hidden_state_size, self.hidden_state_size)
+        elif self.cell_type == 'GRU':
+            self.rnn = torch.nn.GRUCell(self.hidden_state_size, self.hidden_state_size)
+        else:
+            self.rnn = torch.nn.RNNCell(self.hidden_state_size, self.hidden_state_size)
+
+        self.ff = torch.nn.Linear(self.hidden_state_size, self.target_vocab_size)
+
 
     def get_first_hidden_state(self, h, F_lens):
         # build decoder's first hidden state. Ensure it is derived from encoder
