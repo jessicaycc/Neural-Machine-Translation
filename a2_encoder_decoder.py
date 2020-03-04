@@ -226,8 +226,16 @@ class EncoderDecoder(EncoderDecoderBase):
         # relevant pytorch modules: torch.{zero_like,stack}
         # hint: recall an LSTM's cell state is always initialized to zero.
         # Note logits sequence dimension is one shorter than E (why?)
-        for i in h:
-            logits += self.get_current_logits(i)
+
+        htilde_0 = self.decoder.get_first_hidden_state(h, F_lens)
+        htilde_t = htilde_0
+        for i in range(len(E)-1):
+            xtilde_t = self.decoder.get_current_rnn_input(E[i], htilde_tm1, h, F_lens)
+            htilde_t = self.decoder.get_current_hidden_state(xtilde_t, htilde_t)
+            logits_t = self.decoder.get_current_logits(htilde_t)
+            logits = torch.stack([logits, logits_t])
+        return logits_t
+
         
         
     def update_beam(self, htilde_t, b_tm1_1, logpb_tm1, logpy_t):
