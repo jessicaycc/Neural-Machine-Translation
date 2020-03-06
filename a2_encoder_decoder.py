@@ -54,7 +54,7 @@ class Encoder(EncoderBase):
         # h (output) is of shape (S, N, 2 * H)
         # relevant pytorch modules:
         # torch.nn.utils.rnn.{pad_packed,pack_padded}_sequence
-        x = torch.nn.utils.rnn.pack_padded_sequence(x, F_lens)
+        x = torch.nn.utils.rnn.pack_padded_sequence(x, F_lens, enforce_sorted = False)
         output, hidden = self.rnn(x)
         h, _ = torch.nn.utils.rnn.pad_packed_sequence(output, padding_value = h_pad)
         return h
@@ -95,9 +95,12 @@ class DecoderWithoutAttention(DecoderBase):
         # F_lens is of shape (N,)
         # htilde_tm1 (output) is of shape (N, 2 * H)
         # relevant pytorch modules: torch.cat
-        h_f = h[F_lens-1, :, :self.hidden_state_size // 2]
-        h_b = h[0, :, self.hidden_state_size // 2:]
 
+        F_lens = F_lens - 1;
+        temp = torch.arange(len(F_lens))
+        h_f = h[F_lens, temp, :self.hidden_state_size//2]
+        h_b = h[0, :, self.hidden_state_size // 2:]
+    
         htilde_tm1 = torch.cat([h_f, h_b], dim =1 )
         return htilde_tm1
 
@@ -116,7 +119,8 @@ class DecoderWithoutAttention(DecoderBase):
         # xtilde_t is of shape (N, Itilde)
         # htilde_tm1 is of shape (N, 2 * H) or a tuple of two of those (LSTM)
         # htilde_t (output) is of same shape as htilde_tm1
-        return self.cell([xtilde_t, htilde_tm1])
+       
+            return self.cell(xtilde_t, htilde_tm1)
 
     def get_current_logits(self, htilde_t):
         # determine un-normalized log-probability distribution over output
@@ -227,15 +231,15 @@ class EncoderDecoder(EncoderDecoderBase):
         # hint: recall an LSTM's cell state is always initialized to zero.
         # Note logits sequence dimension is one shorter than E (why?)
 
-        htilde_0 = self.decoder.get_first_hidden_state(h, F_lens)
-        htilde_t = htilde_0
+        # logits = torch.tensor()
+        htilde_t = self.decoder.get_first_hidden_state(h, F_lens)
+
         for i in range(len(E)-1):
-            xtilde_t = self.decoder.get_current_rnn_input(E[i], htilde_tm1, h, F_lens)
+            xtilde_t = self.decoder.get_current_rnn_input(E[i], htilde_t, h, F_lens)
             htilde_t = self.decoder.get_current_hidden_state(xtilde_t, htilde_t)
             logits_t = self.decoder.get_current_logits(htilde_t)
             logits = torch.stack([logits, logits_t])
-        return logits_t
-
+        return logits
         
         
     def update_beam(self, htilde_t, b_tm1_1, logpb_tm1, logpy_t):
@@ -254,4 +258,16 @@ class EncoderDecoder(EncoderDecoderBase):
         # torch.{flatten,topk,unsqueeze,expand_as,gather,cat}
         # hint: if you flatten a two-dimensional array of shape z of (A, B),
         # then the element z[a, b] maps to z'[a*B + b]
+
+        assert self.beam_width == 1, "Greedy requires beam width of 1"
+        extensions_t = (logpb_tm1.unsqueeze(-1) + logpy_t).squeeze(1)  # (N, V)
+        logpb_t, v = extensions_t.max(1)  # (N,), (N,)
+        logpb_t = logpb_t.unsqueeze(-1)  # (N, 1) == (N, K)
+        # v indexes the maximal element in dim=1 of extensions_t that was
+        # chosen, which equals the token index v in k -> v
+        v = v.unsqueeze(0).unsqueeze(-1)  # (1, N, 1) == (1, N, K)
+        b_t_1 = torch.cat([b_tm1_1, v], dim=0)
+        # For greedy search, all paths come from the same prefix, so
+        b_t_0 = htilde_t
+        return b_t_0, b_t_1, logpb_t
         
