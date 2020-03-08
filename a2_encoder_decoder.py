@@ -243,7 +243,18 @@ class EncoderDecoder(EncoderDecoderBase):
             # xtilde_t = self.decoder.get_current_rnn_input(E[i], htilde_t, h, F_lens)
             # htilde_t = self.decoder.get_current_hidden_state(xtilde_t, htilde_t)
             # logits[t] = self.decoder.get_current_logits(htilde_t)
-            logits[t], htilde_t = self.decoder.forward(E[t], htilde_t, h, F_lens)
+            # logits[t], htilde_t = self.decoder.forward(E[t], htilde_t, h, F_lens)
+            if htilde_t is None:
+                htilde_t = self.decoder.get_first_hidden_state(h, F_lens)
+                if self.cell_type == 'lstm':
+                    # initialize cell state with zeros
+                    htilde_t = (htilde_t, torch.zeros_like(htilde_t))
+            xtilde_t = self.decoder.get_current_rnn_input(E[t], htilde_t, h, F_lens)
+            htilde_t = self.decoder.get_current_hidden_state(xtilde_t, htilde_t)
+            if self.cell_type == 'lstm':
+                logits[t] = self.decoder.get_current_logits(htilde_t[0])
+            else:
+                logits[t] = self.decoder.get_current_logits(htilde_t)
 
         return logits
         

@@ -67,13 +67,16 @@ def train_for_epoch(model, dataloader, optimizer, device):
     # the loop.
 
     total_loss = 0
+    torch.autograd.set_detect_anomaly(True)
     loss_fn = torch.nn.CrossEntropyLoss(ignore_index=-1)
-    for F, F_lens, E in tqdm(dataloader):
+    for F, F_lens, E in dataloader:
         F = F.to(device)
         F_lens = F_lens.to(device)
         E = E.to(device)
         optimizer = optimizer.zero_grad()
         logits = model(F, F_lens, E)
+
+        E = E[:-1]
         pad = model.get_target_padding_mask(E)
         E = E.masked_fill_(pad, -1)
 
@@ -81,12 +84,13 @@ def train_for_epoch(model, dataloader, optimizer, device):
         logits = torch.flatten(logits, start_dim=0, end_dim=1)
 
         loss = loss_fn(logits, E)
+
         loss.backward()
         optimizer.step()
-        print("loss:", loss)
+   
         total_loss += loss
     avg_loss = total_loss / len(dataloader)
-    print("avg_loss", avg_loss)
+
     return avg_loss
 
 def compute_batch_total_bleu(E_ref, E_cand, target_sos, target_eos):

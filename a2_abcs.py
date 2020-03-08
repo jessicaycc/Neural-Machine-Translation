@@ -17,7 +17,7 @@ Alternatively, you might be on teach, but called 'python3' instead of
 '''
 if (
         platform.python_version() != '3.7.4' or
-        not torch.__version__.startswith('1.4.0')):
+        not torch.__version__.startswith('1.2.0')):
     warnings.warn(BAD_ENV)
 
 
