@@ -101,7 +101,7 @@ class DecoderWithoutAttention(DecoderBase):
         h_f = h[F_lens, temp, :self.hidden_state_size//2]
         h_b = h[0, :, self.hidden_state_size // 2:]
     
-        htilde_tm1 = torch.cat([h_f, h_b], dim =1 )
+        htilde_tm1 = torch.cat([h_f, h_b], dim =1)
         return htilde_tm1
 
     def get_current_rnn_input(self, E_tm1, htilde_tm1, h, F_lens):
@@ -119,7 +119,9 @@ class DecoderWithoutAttention(DecoderBase):
         # xtilde_t is of shape (N, Itilde)
         # htilde_tm1 is of shape (N, 2 * H) or a tuple of two of those (LSTM)
         # htilde_t (output) is of same shape as htilde_tm1
-       
+        if self.cell_type == 'lstm':
+            return self.cell(xtilde_t)
+        else:
             return self.cell(xtilde_t, htilde_tm1)
 
     def get_current_logits(self, htilde_t):
@@ -236,6 +238,8 @@ class EncoderDecoder(EncoderDecoderBase):
 
         for i in range(len(E)-1):
             xtilde_t = self.decoder.get_current_rnn_input(E[i], htilde_t, h, F_lens)
+            print("h: ", htilde_t.size())
+            print("x: ", xtilde_t.size())
             htilde_t = self.decoder.get_current_hidden_state(xtilde_t, htilde_t)
             logits_t = self.decoder.get_current_logits(htilde_t)
             logits = torch.stack([logits, logits_t])

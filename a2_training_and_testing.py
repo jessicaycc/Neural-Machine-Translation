@@ -65,8 +65,29 @@ def train_for_epoch(model, dataloader, optimizer, device):
     # If you are running into CUDA memory errors part way through training,
     # try "del F, F_lens, E, logits, loss" at the end of each iteration of
     # the loop.
-    assert False, "Fill me"
 
+    total_loss = 0
+    loss_fn = torch.nn.CrossEntropyLoss(ignore_index= -float('inf'))
+    for F, F_lens, E in tqdm(dataloader):
+        F = F.to(device)
+        F_lens = F_lens(device)
+        E = E.to(device)
+        optimizer = optimizer.zero_grad()
+        logits = model(F, F_lens, E)
+        pad = model.get_target_padding_mask(E)
+        E = E.masked_fill_(pad, -float('inf'))
+
+        E = torch.flatten(E, start_dim=0, end_dim=1)
+        logits = torch.flatten(logits, start_dim=0, end_dim=1)
+
+        loss = loss_fn(logits, E)
+        loss.backward()
+        optimizer.step()
+        print("loss:", loss)
+        total_loss += loss
+    avg_loss = total_loss / len(dataloader)
+    print("avg_loss", avg_loss)
+    return avg_loss
 
 def compute_batch_total_bleu(E_ref, E_cand, target_sos, target_eos):
     '''Compute the total BLEU score over elements in a batch
@@ -92,10 +113,22 @@ def compute_batch_total_bleu(E_ref, E_cand, target_sos, target_eos):
     '''
     # you can use E_ref.tolist() to convert the LongTensor to a python list
     # of numbers
-    for i in E_ref:
-        ref = E_ref[i].tolist()
-        cand = E_cand[i].tolist()
-        a2_bleu_score.BLEU_score()
+
+    total_bleu = 0
+    E_ref = E_ref.tolist()
+    E_cand = E_cand.tolist()
+
+
+    for i in range(len(E_ref[0])):
+        ref = E_ref[:, i]
+        ref = ref[ref!=target_eos]
+        ref = ref[ref!=target_sos]
+        cand = E_cand[:, i]
+        cand = cand[cand!=target_eos]
+        cand = cand[cand!=target_sos]
+        total_bleu += a2_bleu_score.BLEU_score(ref, cand, 4)
+
+    return total_bleu
 
 
 def compute_average_bleu_over_dataset(
@@ -133,4 +166,14 @@ def compute_average_bleu_over_dataset(
         The total BLEU score summed over all sequences divided by the number of
         sequences
     '''
-    assert False, "Fill me"
+    total_bleu = 0
+    for F, F_lens, E_ref in dataloader:
+        F = F.to(device)
+        F_lens = F_lens.to(device)
+        b_1 = model(F, F_lens)
+        E_cand = b_1[..., 0]
+        total_bleu += compute_batch_total_bleu(E_ref, E_cand, target_eos, target_sos)
+    avg_bleu = total_bleu / len(dataloader)
+
+    print("avg_bleu: ", avg_bleu)
+    return avg_bleu
