@@ -219,7 +219,7 @@ class EncoderDecoder(EncoderDecoderBase):
                                      self.encoder_hidden_size, self.encoder_dropout, self.cell_type)
     
         self.decoder = decoder_class(self.target_vocab_size, self.target_eos, 
-                                     self.word_embedding_size, self.encoder_hidden_size, 
+                                     self.word_embedding_size, self.encoder_hidden_size*2, 
                                      self.cell_type)
 
     def get_logits_for_teacher_forcing(self, h, F_lens, E):
@@ -233,16 +233,18 @@ class EncoderDecoder(EncoderDecoderBase):
         # hint: recall an LSTM's cell state is always initialized to zero.
         # Note logits sequence dimension is one shorter than E (why?)
 
-        # logits = torch.tensor()
-        htilde_t = self.decoder.get_first_hidden_state(h, F_lens)
+        T, N = E.size()
+        Vo = self.target_vocab_size
+        logits = torch.empty(size=(T-1, N, Vo))
+        htilde_t = None
+        # htilde_t = self.decoder.get_first_hidden_state(h, F_lens)
 
-        for i in range(len(E)-1):
-            xtilde_t = self.decoder.get_current_rnn_input(E[i], htilde_t, h, F_lens)
-            print("h: ", htilde_t.size())
-            print("x: ", xtilde_t.size())
-            htilde_t = self.decoder.get_current_hidden_state(xtilde_t, htilde_t)
-            logits_t = self.decoder.get_current_logits(htilde_t)
-            logits = torch.stack([logits, logits_t])
+        for t in range(len(E)-1):
+            # xtilde_t = self.decoder.get_current_rnn_input(E[i], htilde_t, h, F_lens)
+            # htilde_t = self.decoder.get_current_hidden_state(xtilde_t, htilde_t)
+            # logits[t] = self.decoder.get_current_logits(htilde_t)
+            logits[t], htilde_t = self.decoder.forward(E[t], htilde_t, h, F_lens)
+
         return logits
         
         

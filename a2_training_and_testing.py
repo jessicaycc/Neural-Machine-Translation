@@ -67,15 +67,15 @@ def train_for_epoch(model, dataloader, optimizer, device):
     # the loop.
 
     total_loss = 0
-    loss_fn = torch.nn.CrossEntropyLoss(ignore_index= -float('inf'))
+    loss_fn = torch.nn.CrossEntropyLoss(ignore_index=-1)
     for F, F_lens, E in tqdm(dataloader):
         F = F.to(device)
-        F_lens = F_lens(device)
+        F_lens = F_lens.to(device)
         E = E.to(device)
         optimizer = optimizer.zero_grad()
         logits = model(F, F_lens, E)
         pad = model.get_target_padding_mask(E)
-        E = E.masked_fill_(pad, -float('inf'))
+        E = E.masked_fill_(pad, -1)
 
         E = torch.flatten(E, start_dim=0, end_dim=1)
         logits = torch.flatten(logits, start_dim=0, end_dim=1)

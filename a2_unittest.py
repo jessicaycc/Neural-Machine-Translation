@@ -14,7 +14,7 @@ class Test(unittest.TestCase):
         N, V, H, S, I = 10, 5, 4, 12, 20
 
         F = torch.randint( low = 0, high = V, size = (S,N))
-        encoder = Encoder(V, hidden_state_size=2 * H, word_embedding_size = I)
+        encoder = Encoder(V, hidden_state_size=H, word_embedding_size = I)
         x = encoder.get_all_rnn_inputs(F)
         #check shape
         assert x.shape == (S,N,I)
@@ -27,7 +27,7 @@ class Test(unittest.TestCase):
     
     def test_encoder_get_all_hidden_states(self):
         N, V, H, S, I = 10, 5, 4, 12, 20
-        encoder = Encoder(V, hidden_state_size=2 * H, word_embedding_size = I, cell_type = 'rnn')
+        encoder = Encoder(V, hidden_state_size=H, word_embedding_size = I, cell_type = 'rnn')
 
         #`x` has been padded such that ``x[F_lens[n]:, n, :] == 0.`` for all ``n``
         x = torch.rand( (S,N,I))
@@ -56,21 +56,21 @@ class Test(unittest.TestCase):
         
         F_lens[-1] = S
         
-        h = torch.rand(size = (S,N,H))
+        h = torch.rand(size = (S,N,2*H))
      
-        decoder = DecoderWithoutAttention(V, hidden_state_size= H)
+        decoder = DecoderWithoutAttention(V, hidden_state_size=2*H)
         htilde_0 = decoder.get_first_hidden_state(h, F_lens)
         assert htilde_0.shape == (N,decoder.hidden_state_size)
         
         for n in range(0,N):
             seq_size = F_lens[n]
-            exp_for = h[seq_size - 1, n, :H // 2]  
-            act_for = htilde_0[n, :H // 2]
+            exp_for = h[seq_size - 1, n, :H]  
+            act_for = htilde_0[n, :H]
            
             # assert torch.allclose(exp_for, act_for)
             
-            exp_back = h[0, n, H // 2:]  
-            act_back = htilde_0[n, H // 2:]
+            exp_back = h[0, n, H:]  
+            act_back = htilde_0[n, H:]
 
             assert torch.allclose(exp_back, act_back)
             
@@ -85,7 +85,7 @@ class Test(unittest.TestCase):
         h = torch.rand(size = (S, N, H))
                 
         
-        decoder = DecoderWithoutAttention(V, hidden_state_size= H)
+        decoder = DecoderWithoutAttention(V, hidden_state_size=2*H)
         xtilde_t = decoder.get_current_rnn_input(E_tm1, htilde_tm1, h, F_lens)
         assert xtilde_t.shape == (N,decoder.word_embedding_size)
         
@@ -98,20 +98,20 @@ class Test(unittest.TestCase):
         N, V, H, S, I = 10, 5, 4, 12, 100
 
         xtilde_t = torch.rand(size = (N,I))
-        htilde_tm1 = torch.rand(size = (N, H))
+        htilde_tm1 = torch.rand(size = (N, 2*H))
                 
         
-        decoder = DecoderWithoutAttention(V, hidden_state_size= H, cell_type = 'rnn', word_embedding_size = I)
+        decoder = DecoderWithoutAttention(V, hidden_state_size=2*H, cell_type = 'rnn', word_embedding_size = I)
         htilde_t = decoder.get_current_hidden_state(xtilde_t, htilde_tm1)
         assert htilde_t.shape == htilde_tm1.shape
 
 
     def test_decoder_wo_attention_get_current_logits(self):
         N, V, H, S, I = 10, 5, 4, 12, 100
-        htilde_t = torch.rand(size = (N, H))
+        htilde_t = torch.rand(size = (N, 2*H))
                 
         
-        decoder = DecoderWithoutAttention(V, hidden_state_size= H, cell_type = 'rnn', word_embedding_size = I)
+        decoder = DecoderWithoutAttention(V, hidden_state_size=2*H, cell_type = 'rnn', word_embedding_size = I)
         logits_t = decoder.get_current_logits(htilde_t)
         assert logits_t.shape == (N, V)
     
