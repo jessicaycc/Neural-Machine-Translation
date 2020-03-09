@@ -191,7 +191,7 @@ class DecoderWithAttention(DecoderWithoutAttention):
             print("h: ", h[:,i,:].size())
             # exit()
             v = torch.mm(alpha_t[:, i].t(), h[:,i,:])
-            v = alpha_t[:, i]* h[:,i,:]
+            # v = alpha_t[:, i]* h[:,i,:]
             c_t[i,:] = torch.squeeze(v)
         
         return c_t
