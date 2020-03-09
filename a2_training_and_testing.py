@@ -70,7 +70,7 @@ def train_for_epoch(model, dataloader, optimizer, device):
     loss_fn = torch.nn.CrossEntropyLoss(ignore_index=-10)
     i = 0
     for F, F_lens, E in dataloader:
-        print('iteration: ', i, "of dataloader")
+        # print('iteration: ', i, "of dataloader")
         F = F.to(device)
         F_lens = F_lens.to(device)
         E = E.to(device)
@@ -125,19 +125,19 @@ def compute_batch_total_bleu(E_ref, E_cand, target_sos, target_eos):
 
     total_bleu = 0
     E_ref = E_ref.tolist()
-    print(E_ref)
+    # print(E_ref)
     E_cand = E_cand.tolist()
-    print(E_cand)
+    # print(E_cand)
    
 
     for i in range(len(E_ref[0])):
-        print("Sequence ", i)
+        # print("Sequence ", i)
         ref = [item[i] for item in E_ref]
         # ref = E_ref[i]
-        print("ref", ref)
+        # print("ref", ref)
         cand = [item[i] for item in E_cand]
         # cand = E_cand[i]
-        print("cand", cand)
+        # print("cand", cand)
         # ref = E_ref[i]
         ref = [x for x in ref if x != target_sos]
         ref = [x for x in ref if x != target_eos]
@@ -193,5 +193,5 @@ def compute_average_bleu_over_dataset(
         total_bleu += compute_batch_total_bleu(E_ref, E_cand, target_eos, target_sos)
     avg_bleu = total_bleu / len(dataloader.dataset)
 
-    print("avg_bleu: ", avg_bleu)
+    # print("avg_bleu: ", avg_bleu)
     return avg_bleu

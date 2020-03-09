@@ -166,7 +166,9 @@ class DecoderWithAttention(DecoderWithoutAttention):
 
     def get_current_rnn_input(self, E_tm1, htilde_tm1, h, F_lens):
         # update to account for attention. Use attend() for c_t
-        return torch.cat([self.embedding(E_tm1), self.attend(htilde_tm1, h, F_lens)], dim = 1)
+        xtilde_t = torch.cat([self.embedding(E_tm1), self.attend(htilde_tm1, h, F_lens)], dim = 1)
+        # print("xtilde_t:", xtilde_t.size())
+        return xtilde_t
 
     def attend(self, htilde_t, h, F_lens):
         # compute context vector c_t. Use get_attention_weights() to calculate
@@ -175,11 +177,21 @@ class DecoderWithAttention(DecoderWithoutAttention):
         # h is of shape (S, N, 2 * H)
         # F_lens is of shape (N,)
         # c_t (output) is of shape (N, 2 * H)
+        # print("htilde_t: ", htilde_t.size())
+        # print("h: ", h.size())
+        # print("F_lens:", F_lens.size())
         c_t = torch.zeros_like(h[0], device = h.device)
+        # print("c_t:", c_t.size())
+        # exit()
         alpha_t = self.get_attention_weights(htilde_t, h, F_lens)
-        
+        print("a: ", alpha_t.size())
+        print("h:", h.size())
         for i in range(len(F_lens)):
+            print("alpha: ", alpha_t[:, i].size())
+            print("h: ", h[:,i,:].size())
+            # exit()
             v = torch.mm(alpha_t[:, i].t(), h[:,i,:])
+            v = alpha_t[:, i]* h[:,i,:]
             c_t[i,:] = torch.squeeze(v)
         
         return c_t
@@ -200,7 +212,15 @@ class DecoderWithAttention(DecoderWithoutAttention):
         # htilde_t is of shape (N, 2 * H)
         # h is of shape (S, N, 2 * H)
         # e_t (output) is of shape (S, N)
-        return torch.nn.functional.cosine_similarity(htilde_t, h)
+        S = len(h)
+        N = len(htilde_t)
+        e_t = torch.empty(size=(S, N))
+        for i in range(len(h)):
+            e = torch.nn.functional.cosine_similarity(htilde_t, h[i])
+            e_t[i] = e.clone()
+        # print("e_t: ", e_t.size())
+        # exit()
+        return e_t
 
 
 class EncoderDecoder(EncoderDecoderBase):

@@ -134,5 +134,5 @@ def BLEU_score(reference, hypothesis, n):
         p = n_gram_precision(reference, hypothesis, i+1)
         p_total = p_total * p
     bleu = BP * p_total**(1/n)
-    print("bleu: ", bleu)
+    # print("bleu: ", bleu)
     return (bleu) 
