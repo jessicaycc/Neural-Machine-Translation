@@ -177,22 +177,13 @@ class DecoderWithAttention(DecoderWithoutAttention):
         # h is of shape (S, N, 2 * H)
         # F_lens is of shape (N,)
         # c_t (output) is of shape (N, 2 * H)
-        # print("htilde_t: ", htilde_t.size())
-        # print("h: ", h.size())
-        # print("F_lens:", F_lens.size())
         c_t = torch.zeros_like(h[0], device = h.device)
-        # print("c_t:", c_t.size())
-        # exit()
+ 
         alpha_t = self.get_attention_weights(htilde_t, h, F_lens)
-        print("a: ", alpha_t.size())
-        print("h:", h.size())
+
         for i in range(len(F_lens)):
-            print("alpha: ", alpha_t[:, i].size())
-            print("h: ", h[:,i,:].size())
-            # exit()
-            v = torch.mm(alpha_t[:, i].t(), h[:,i,:])
-            # v = alpha_t[:, i]* h[:,i,:]
-            c_t[i,:] = torch.squeeze(v)
+            v = torch.mm(alpha_t.t(), h[:,i,:])
+            c_t = c_t + v
         
         return c_t
 
