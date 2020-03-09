@@ -71,7 +71,10 @@ def n_gram_precision(reference, candidate, n):
     for word in candidate_ngram:
         if word in reference_ngram:
             C += 1
-    p_n = C/N
+    if (N == 0):
+        p_n = 0
+    else:
+        p_n = C/N
     return (p_n)
 
 def brevity_penalty(reference, candidate):
@@ -131,5 +134,5 @@ def BLEU_score(reference, hypothesis, n):
         p = n_gram_precision(reference, hypothesis, i+1)
         p_total = p_total * p
     bleu = BP * p_total**(1/n)
-    print(bleu)
+    print("bleu: ", bleu)
     return (bleu) 

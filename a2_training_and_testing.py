@@ -70,14 +70,16 @@ def train_for_epoch(model, dataloader, optimizer, device):
     loss_fn = torch.nn.CrossEntropyLoss(ignore_index=-10)
     i = 0
     for F, F_lens, E in dataloader:
-        print(i)
+        print('iteration: ', i, "of dataloader")
         F = F.to(device)
         F_lens = F_lens.to(device)
         E = E.to(device)
         optimizer.zero_grad()
         logits = model(F, F_lens, E)
-
-        E = E[:-1]
+        # print("E before removing token: ", E)
+        E = E[1:]
+        # print("E after removing token: ", E)
+        # exit()
         pad = model.get_target_padding_mask(E)
         E = E.masked_fill_(pad, -10)
 
@@ -127,14 +129,14 @@ def compute_batch_total_bleu(E_ref, E_cand, target_sos, target_eos):
     E_cand = E_cand.tolist()
     print(E_cand)
    
-    print("eos", target_eos)
-    print("sos", target_sos)
 
     for i in range(len(E_ref[0])):
-        print(i)
+        print("Sequence ", i)
         ref = [item[i] for item in E_ref]
+        # ref = E_ref[i]
         print("ref", ref)
         cand = [item[i] for item in E_cand]
+        # cand = E_cand[i]
         print("cand", cand)
         # ref = E_ref[i]
         ref = [x for x in ref if x != target_sos]
@@ -143,7 +145,7 @@ def compute_batch_total_bleu(E_ref, E_cand, target_sos, target_eos):
         cand = [x for x in cand if x != target_sos]
         cand = [x for x in cand if x != target_eos]
         total_bleu += a2_bleu_score.BLEU_score(ref, cand, 4)
-
+    
     return total_bleu
 
 

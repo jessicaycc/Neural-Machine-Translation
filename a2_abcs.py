@@ -707,10 +707,10 @@ class EncoderDecoderBase(torch.nn.Module, metaclass=abc.ABCMeta):
             self.check_input(F, F_lens, None, max_T, on_max)
         h = self.encoder(F, F_lens)  # (S, N, 2 * H)
         if self.training:
-            print("teacher forcing")
+            # print("teacher forcing")
             return self.get_logits_for_teacher_forcing(h, F_lens, E)
         else:
-            print("bs")
+            # print("bs")
             return self.beam_search(h, F_lens, max_T, on_max)
 
     @abc.abstractmethod

@@ -238,9 +238,9 @@ class EncoderDecoder(EncoderDecoderBase):
         logits = torch.empty(size=(T-1, N, Vo))
         htilde_t = None
         # htilde_t = self.decoder.get_first_hidden_state(h, F_lens)
-        print("E[0]: ", len(E[0]))
-        print("E: ", len(E))
-        for t in range(len(E[0])-1):
+        # print("E[0]: ", len(E[0]))
+        # print("E: ", len(E))
+        for t in range(len(E)-1):
             # E_clone = E[t].clone()
             # xtilde_t = self.decoder.get_current_rnn_input(E_clone, htilde_t, h, F_lens)
             # htilde_t = self.decoder.get_current_hidden_state(xtilde_t, htilde_t)
@@ -248,14 +248,18 @@ class EncoderDecoder(EncoderDecoderBase):
 
             if htilde_t is None:
                 htilde_t = self.decoder.get_first_hidden_state(h, F_lens)
+                # print("htilde_t: ", htilde_t.size())
                 if self.cell_type == 'lstm':
                     # initialize cell state with zeros
                     htilde_t = (htilde_t, torch.zeros_like(htilde_t))
             # fixed this, was cloning each row instead of each column 
-            E_clone = E[:,t].clone()
+            E_clone = E[t].clone()
+            # print("E_clone: ", E_clone.size())
+            # print("F_lens: ", F_lens.size())
+            # print("h: ", h.size())
           
             xtilde_t = self.decoder.get_current_rnn_input(E_clone, htilde_t, h, F_lens)
-            print("xtilde_t: ", xtilde_t.size())
+            # print("xtilde_t: ", xtilde_t.size())
             htilde_t = self.decoder.get_current_hidden_state(xtilde_t, htilde_t)
             if self.cell_type == 'lstm':
                 logits[t] = self.decoder.get_current_logits(htilde_t[0])
