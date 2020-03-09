@@ -177,7 +177,7 @@ class DecoderWithAttention(DecoderWithoutAttention):
         # h is of shape (S, N, 2 * H)
         # F_lens is of shape (N,)
         # c_t (output) is of shape (N, 2 * H)
-        
+
         c_t = torch.zeros_like(h[0], device = h.device)
  
         alpha_t = self.get_attention_weights(htilde_t, h, F_lens)
@@ -206,13 +206,17 @@ class DecoderWithAttention(DecoderWithoutAttention):
         # h is of shape (S, N, 2 * H)
         # e_t (output) is of shape (S, N)
         S = len(h)
-        N = len(htilde_t)
+        if self.cell_type == 'lstm':
+            N = len(htilde_t[0])
+        else:
+            N = len(htilde_t)
         e_t = torch.empty(size=(S, N))
         for i in range(len(h)):
-            e = torch.nn.functional.cosine_similarity(htilde_t, h[i])
+            if self.cell_type == "lstm":
+                e = torch.nn.functional.cosine_similarity(htilde_t[0], h[i])
+            else:
+                e = torch.nn.functional.cosine_similarity(htilde_t, h[i])
             e_t[i] = e.clone()
-        # print("e_t: ", e_t.size())
-        # exit()
         return e_t
 
 
