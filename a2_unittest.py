@@ -67,7 +67,7 @@ class Test(unittest.TestCase):
             exp_for = h[seq_size - 1, n, :H]  
             act_for = htilde_0[n, :H]
            
-            # assert torch.allclose(exp_for, act_for)
+            assert torch.allclose(exp_for, act_for)
             
             exp_back = h[0, n, H:]  
             act_back = htilde_0[n, H:]

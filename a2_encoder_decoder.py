@@ -96,12 +96,12 @@ class DecoderWithoutAttention(DecoderBase):
         # htilde_tm1 (output) is of shape (N, 2 * H)
         # relevant pytorch modules: torch.cat
 
-        F_lens = F_lens - 1;
         temp = torch.arange(len(F_lens))
-        h_f = h[F_lens, temp, :self.hidden_state_size//2]
-        h_b = h[0, :, self.hidden_state_size // 2:]
+        h_f = h[F_lens-1, temp, :self.hidden_state_size//2]
+        h_b = h[0, temp, self.hidden_state_size // 2:]
+        # exit()
     
-        htilde_tm1 = torch.cat([h_f, h_b], dim =1)
+        htilde_tm1 = torch.cat([h_f, h_b], dim =1) 
         return htilde_tm1
 
     def get_current_rnn_input(self, E_tm1, htilde_tm1, h, F_lens):
@@ -112,17 +112,18 @@ class DecoderWithoutAttention(DecoderBase):
         # h is of shape (S, N, 2 * H)
         # F_lens is of shape (N,)
         # xtilde_t (output) is of shape (N, Itilde)
-        return self.embedding(E_tm1)
+     
+        xtilde_t = self.embedding(E_tm1)
+
+        return xtilde_t
 
     def get_current_hidden_state(self, xtilde_t, htilde_tm1):
         # update the previous hidden state to the current hidden state.
         # xtilde_t is of shape (N, Itilde)
         # htilde_tm1 is of shape (N, 2 * H) or a tuple of two of those (LSTM)
         # htilde_t (output) is of same shape as htilde_tm1
-        if self.cell_type == 'lstm':
-            return self.cell(xtilde_t)
-        else:
-            return self.cell(xtilde_t, htilde_tm1)
+       
+        return self.cell(xtilde_t, htilde_tm1)
 
     def get_current_logits(self, htilde_t):
         # determine un-normalized log-probability distribution over output
@@ -232,24 +233,28 @@ class EncoderDecoder(EncoderDecoderBase):
         # relevant pytorch modules: torch.{zero_like,stack}
         # hint: recall an LSTM's cell state is always initialized to zero.
         # Note logits sequence dimension is one shorter than E (why?)
-
         T, N = E.size()
         Vo = self.target_vocab_size
         logits = torch.empty(size=(T-1, N, Vo))
         htilde_t = None
         # htilde_t = self.decoder.get_first_hidden_state(h, F_lens)
-
-        for t in range(len(E)-1):
-            # xtilde_t = self.decoder.get_current_rnn_input(E[i], htilde_t, h, F_lens)
+        print("E[0]: ", len(E[0]))
+        print("E: ", len(E))
+        for t in range(len(E[0])-1):
+            # E_clone = E[t].clone()
+            # xtilde_t = self.decoder.get_current_rnn_input(E_clone, htilde_t, h, F_lens)
             # htilde_t = self.decoder.get_current_hidden_state(xtilde_t, htilde_t)
             # logits[t] = self.decoder.get_current_logits(htilde_t)
-            # logits[t], htilde_t = self.decoder.forward(E[t], htilde_t, h, F_lens)
+
             if htilde_t is None:
                 htilde_t = self.decoder.get_first_hidden_state(h, F_lens)
                 if self.cell_type == 'lstm':
                     # initialize cell state with zeros
                     htilde_t = (htilde_t, torch.zeros_like(htilde_t))
-            xtilde_t = self.decoder.get_current_rnn_input(E[t], htilde_t, h, F_lens)
+            E_clone = E[:,t].clone()
+          
+            xtilde_t = self.decoder.get_current_rnn_input(E_clone, htilde_t, h, F_lens)
+            print("xtilde_t: ", xtilde_t.size())
             htilde_t = self.decoder.get_current_hidden_state(xtilde_t, htilde_t)
             if self.cell_type == 'lstm':
                 logits[t] = self.decoder.get_current_logits(htilde_t[0])

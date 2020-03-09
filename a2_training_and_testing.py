@@ -67,18 +67,19 @@ def train_for_epoch(model, dataloader, optimizer, device):
     # the loop.
 
     total_loss = 0
-    torch.autograd.set_detect_anomaly(True)
-    loss_fn = torch.nn.CrossEntropyLoss(ignore_index=-1)
+    loss_fn = torch.nn.CrossEntropyLoss(ignore_index=-10)
+    i = 0
     for F, F_lens, E in dataloader:
+        print(i)
         F = F.to(device)
         F_lens = F_lens.to(device)
         E = E.to(device)
-        optimizer = optimizer.zero_grad()
+        optimizer.zero_grad()
         logits = model(F, F_lens, E)
 
         E = E[:-1]
         pad = model.get_target_padding_mask(E)
-        E = E.masked_fill_(pad, -1)
+        E = E.masked_fill_(pad, -10)
 
         E = torch.flatten(E, start_dim=0, end_dim=1)
         logits = torch.flatten(logits, start_dim=0, end_dim=1)
@@ -87,8 +88,10 @@ def train_for_epoch(model, dataloader, optimizer, device):
 
         loss.backward()
         optimizer.step()
-   
+        
         total_loss += loss
+        i = i+1
+       
     avg_loss = total_loss / len(dataloader)
 
     return avg_loss
@@ -120,16 +123,25 @@ def compute_batch_total_bleu(E_ref, E_cand, target_sos, target_eos):
 
     total_bleu = 0
     E_ref = E_ref.tolist()
+    print(E_ref)
     E_cand = E_cand.tolist()
-
+    print(E_cand)
+   
+    print("eos", target_eos)
+    print("sos", target_sos)
 
     for i in range(len(E_ref[0])):
-        ref = E_ref[:, i]
-        ref = ref[ref!=target_eos]
-        ref = ref[ref!=target_sos]
-        cand = E_cand[:, i]
-        cand = cand[cand!=target_eos]
-        cand = cand[cand!=target_sos]
+        print(i)
+        ref = [item[i] for item in E_ref]
+        print("ref", ref)
+        cand = [item[i] for item in E_cand]
+        print("cand", cand)
+        # ref = E_ref[i]
+        ref = [x for x in ref if x != target_sos]
+        ref = [x for x in ref if x != target_eos]
+        # cand = E_cand[i]
+        cand = [x for x in cand if x != target_sos]
+        cand = [x for x in cand if x != target_eos]
         total_bleu += a2_bleu_score.BLEU_score(ref, cand, 4)
 
     return total_bleu
@@ -177,7 +189,7 @@ def compute_average_bleu_over_dataset(
         b_1 = model(F, F_lens)
         E_cand = b_1[..., 0]
         total_bleu += compute_batch_total_bleu(E_ref, E_cand, target_eos, target_sos)
-    avg_bleu = total_bleu / len(dataloader)
+    avg_bleu = total_bleu / len(dataloader.dataset)
 
     print("avg_bleu: ", avg_bleu)
     return avg_bleu

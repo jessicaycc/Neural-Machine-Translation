@@ -515,7 +515,8 @@ class EncoderDecoderBase(torch.nn.Module, metaclass=abc.ABCMeta):
             source_vocab_size, target_vocab_size, source_pad_id=-1,
             target_sos=-2, target_eos=-1, encoder_hidden_size=512,
             word_embedding_size=1024, encoder_num_hidden_layers=2,
-            encoder_dropout=0.1, cell_type='lstm', beam_width=4):
+            encoder_dropout=0.1, cell_type='lstm', beam_width=1):
+
         '''Initialize the encoder decoder combo
 
         Sets some non-parameter attributes, then calls :func:`init_submodules`.
@@ -697,7 +698,7 @@ class EncoderDecoderBase(torch.nn.Module, metaclass=abc.ABCMeta):
         pad_mask = pad_mask & torch.cat([pad_mask[:1], pad_mask[:-1]], 0)
         return pad_mask
 
-    def forward(self, F, F_lens, E=None, max_T=100, on_max='raise'):
+    def forward(self, F, F_lens, E=None, max_T=100, on_max='halt'):
         if self.training:
             if E is None:
                 raise RuntimeError('E must be set for training')
@@ -706,8 +707,10 @@ class EncoderDecoderBase(torch.nn.Module, metaclass=abc.ABCMeta):
             self.check_input(F, F_lens, None, max_T, on_max)
         h = self.encoder(F, F_lens)  # (S, N, 2 * H)
         if self.training:
+            print("teacher forcing")
             return self.get_logits_for_teacher_forcing(h, F_lens, E)
         else:
+            print("bs")
             return self.beam_search(h, F_lens, max_T, on_max)
 
     @abc.abstractmethod
