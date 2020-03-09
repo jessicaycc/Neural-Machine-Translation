@@ -251,6 +251,7 @@ class EncoderDecoder(EncoderDecoderBase):
                 if self.cell_type == 'lstm':
                     # initialize cell state with zeros
                     htilde_t = (htilde_t, torch.zeros_like(htilde_t))
+            # fixed this, was cloning each row instead of each column 
             E_clone = E[:,t].clone()
           
             xtilde_t = self.decoder.get_current_rnn_input(E_clone, htilde_t, h, F_lens)
